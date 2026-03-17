@@ -21,6 +21,7 @@
 - [Python Bytecode](#python-bytecode)
   - [Disassembly](#disassembly)
   - [Extract Constants](#extract-constants)
+  - [Pyarmor Static Unpack (1shot)](#pyarmor-static-unpack-1shot)
 - [WASM Analysis](#wasm-analysis)
   - [Decompile to C](#decompile-to-c)
   - [Common Patterns](#common-patterns)
@@ -28,6 +29,8 @@
   - [Extraction](#extraction)
   - [Key Locations](#key-locations)
   - [Search](#search)
+  - [Flutter APK (Blutter)](#flutter-apk-blutter)
+  - [HarmonyOS HAP/ABC (abc-decompiler)](#harmonyos-hapabc-abc-decompiler)
 - [.NET Analysis](#net-analysis)
   - [Tools](#tools)
   - [NativeAOT](#nativeaot)
@@ -247,6 +250,27 @@ for ins in dis.get_instructions(code):
         print(ins.argval)
 ```
 
+### Pyarmor Static Unpack (1shot)
+
+Repository: `https://github.com/Lil-House/Pyarmor-Static-Unpack-1shot`
+
+```bash
+# Basic usage (recursive processing)
+python /path/to/oneshot/shot.py /path/to/scripts
+
+# Specify pyarmor runtime library explicitly
+python /path/to/oneshot/shot.py /path/to/scripts -r /path/to/pyarmor_runtime.so
+
+# Save outputs to another directory
+python /path/to/oneshot/shot.py /path/to/scripts -o /path/to/output
+```
+
+Notes:
+- `oneshot/pyarmor-1shot` must exist before running `shot.py`.
+- Supported focus: Pyarmor 8.x-9.x (`PY` + six digits header style).
+- Pyarmor 7 and earlier (`PYARMOR` header) are out of scope.
+- Disassembly output is generally reliable; decompiled source is experimental.
+
 ---
 
 ## WASM Analysis
@@ -284,6 +308,42 @@ unzip app.apk -d extracted/      # Simple extraction
 grep -r "flag\|CTF" decoded/
 strings decoded/classes*.dex | grep -i flag
 ```
+
+### Flutter APK (Blutter)
+
+```bash
+# Run Blutter on arm64 build
+python3 blutter.py path/to/app/lib/arm64-v8a out_dir
+```
+
+### HarmonyOS HAP/ABC (abc-decompiler)
+
+Repository: `https://github.com/ohos-decompiler/abc-decompiler`
+
+```bash
+# Extract .hap first to obtain .abc files
+unzip app.hap -d hap_extracted/
+```
+
+Critical startup mode:
+```bash
+# Use CLI entrypoint (avoid java -jar GUI mode)
+java -cp "./jadx-dev-all.jar" jadx.cli.JadxCLI [options] <input>
+```
+
+```bash
+# Basic decompile
+java -cp "./jadx-dev-all.jar" jadx.cli.JadxCLI -d "out" ".abc"
+
+# Recommended for .abc
+java -cp "./jadx-dev-all.jar" jadx.cli.JadxCLI -m simple --log-level ERROR -d "out_abc_simple" ".abc"
+```
+
+Notes:
+- Start with `-m simple --log-level ERROR`.
+- If `auto` fails, retry with `-m simple` first.
+- Errors do not always mean total failure; check `out_xxx/sources/`.
+- Use a fresh output directory per run.
 
 ---
 
